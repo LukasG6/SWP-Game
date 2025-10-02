@@ -8,6 +8,7 @@ var attack_duration := 0.2  # Dauer, wie lange die Hitbox aktiv ist
 var attacking := false
 var attack_timer := 0.0
 
+
 func _physics_process(delta):
 	var input_dir := Input.get_axis("ui_left", "ui_right")
 
@@ -44,25 +45,38 @@ func _physics_process(delta):
 func start_attack():
 	attacking = true
 	attack_timer = attack_duration
+	$AttackHitbox2D/CollisionShape2D.disabled = false  # richtig!
+	$AttackHitbox2D/ColorRect.visible = true
 
-	# Hitbox aktivieren
-	$"Player/AttackHitbox2D".disabled = false
+	
+	var offset := Vector2.ZERO
+	var distance := 30
 
-	# Offset HIER definieren
-	var offset := Vector2(30, 0)
+	var attack_dir := Vector2.ZERO
 
-	if facing_right:
-		$"Player/AttackHitbox2D".position = offset
-	else:
-		$"Player/AttackHitbox2D".position = -offset
+	if Input.is_action_pressed("ui_right"):
+		attack_dir = Vector2.RIGHT
+	elif Input.is_action_pressed("ui_left"):
+		attack_dir = Vector2.LEFT
+	elif Input.is_action_pressed("ui_up"):
+		attack_dir = Vector2.UP
+	elif Input.is_action_pressed("ui_down"):
+		attack_dir = Vector2.DOWN
 
+	if attack_dir == Vector2.ZERO:
+		attack_dir = Vector2.RIGHT if facing_right else Vector2.LEFT
+
+	offset = attack_dir * distance
+	$AttackHitbox2D.position = offset
 
 
 func stop_attack():
 	attacking = false
-	$"Player/AttackHitbox2D".disabled = true  # <-- RICHTIGER NAME
+	$AttackHitbox2D/CollisionShape2D.disabled = true  # richtig!
+	$AttackHitbox2D/ColorRect.visible = false
 
 
 func _on_AttackHitbox2D_body_entered(body: Node) -> void:
 	print("Getroffen: ", body.name)
 	# Hier kannst du body.take_damage() o.ä. aufrufen
+	
