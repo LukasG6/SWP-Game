@@ -24,7 +24,8 @@ func _physics_process(delta):
 	# --- Springen ---
 	if Input.is_action_just_pressed("ui_accept") and is_on_floor():
 		velocity.y = -jump_force
-
+	
+	
 	move_and_slide()
 
 	# --- Blickrichtung merken ---
@@ -40,18 +41,19 @@ func _physics_process(delta):
 		attack_timer -= delta
 		if attack_timer <= 0:
 			stop_attack()
+	
+	
 
 
 func start_attack():
 	attacking = true
 	attack_timer = attack_duration
-	$AttackHitbox2D/CollisionShape2D.disabled = false  # richtig!
+	$AttackHitbox2D/CollisionShape2D.disabled = false
 	$AttackHitbox2D/ColorRect.visible = true
-
-	
 	var offset := Vector2.ZERO
-	var distance := 30
+	var distance := 60  # Abstand der Hitbox vom Spieler – größer für besseres Feedback
 
+	# --- Angriffsrichtung bestimmen ---
 	var attack_dir := Vector2.ZERO
 
 	if Input.is_action_pressed("ui_right"):
@@ -66,6 +68,7 @@ func start_attack():
 	if attack_dir == Vector2.ZERO:
 		attack_dir = Vector2.RIGHT if facing_right else Vector2.LEFT
 
+	# Position der Hitbox setzen
 	offset = attack_dir * distance
 	$AttackHitbox2D.position = offset
 
@@ -80,3 +83,6 @@ func _on_AttackHitbox2D_body_entered(body: Node) -> void:
 	print("Getroffen: ", body.name)
 	# Hier kannst du body.take_damage() o.ä. aufrufen
 	
+func _draw():
+	if attacking:
+		draw_circle($AttackHitbox2D.position, 20, Color.RED)
