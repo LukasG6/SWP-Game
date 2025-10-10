@@ -29,15 +29,15 @@ shape = SubResource("RectangleShape2D_epypp")
 [node name="AttackHitbox2D" type="Area2D" parent="Player"]
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Player/AttackHitbox2D"]
-position = Vector2(172.83469, -24.870514)
+position = Vector2(-0.04031372, 2.129486)
 shape = SubResource("RectangleShape2D_q6r6c")
 disabled = true
 
 [node name="ColorRect" type="ColorRect" parent="Player/AttackHitbox2D"]
-offset_left = -80.04031
-offset_top = -112.870514
-offset_right = 432.9597
-offset_bottom = 77.129486
+offset_left = -240.04031
+offset_top = -95.870514
+offset_right = 272.9597
+offset_bottom = 94.129486
 color = Color(0.9948222, 0.23172748, 0, 1)
 
 [node name="Ground" type="StaticBody2D" parent="."]
