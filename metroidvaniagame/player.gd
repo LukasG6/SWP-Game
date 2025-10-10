@@ -1,45 +1,45 @@
 extends CharacterBody2D
 
+# --- Bewegungsvariablen ---
 var speed := 200
 var gravity := 900
 var jump_force := 450
 var facing_right := true
+
+# --- Angriff ---
 var attack_duration := 0.2
 var attacking := false
 var attack_timer := 0.0
 
+# --- Sprung ---
 var max_jumps := 2
 var jumps_done := 0
 
-# --- Dash-Variablen ---
+# --- Dash ---
 var dash_speed := 600
 var dash_time := 0.2
-var dash_cooldown := 1.0
 var dashing := false
 var dash_timer := 0.0
-var dash_cooldown_timer := 0.0
 var dash_direction := Vector2.ZERO
+var can_dash := true
 
+# --- Nodes ---
 @onready var attack_sprite = $AttackSprite
-
+@onready var dash_sprite = $DashSprite   # <-- dein Dash-Sprite (füge es in der Szene hinzu!)
 
 func _physics_process(delta):
 	var input_dir := Input.get_axis("ui_left", "ui_right")
-
-	# --- Dash Cooldown ---
-	if dash_cooldown_timer > 0:
-		dash_cooldown_timer -= delta
 
 	# --- Dash aktiv ---
 	if dashing:
 		dash_timer -= delta
 		if dash_timer <= 0:
 			dashing = false
-			# cooldown läuft weiter, wird ggf. durch Boden zurückgesetzt
+			dash_sprite.visible = false
 		else:
 			velocity = dash_direction * dash_speed
 			move_and_slide()
-			return  # normale Bewegung während Dash verhindern
+			return  # verhindert normale Bewegung während Dash
 
 	# --- Bewegung links/rechts ---
 	velocity.x = input_dir * speed
@@ -49,9 +49,8 @@ func _physics_process(delta):
 		velocity.y += gravity * delta
 	else:
 		velocity.y = max(velocity.y, 0)
-		jumps_done = 0  # Doppelsprung zurücksetzen
-		dashing = false  # Dash zurücksetzen
-		dash_cooldown_timer = 0  # Dash sofort wieder verfügbar
+		jumps_done = 0
+		can_dash = true  # Dash beim Bodenkontakt zurücksetzen
 
 	# --- Springen & Doppelsprung ---
 	if Input.is_action_just_pressed("ui_accept") and jumps_done < max_jumps:
@@ -75,9 +74,8 @@ func _physics_process(delta):
 			stop_attack()
 
 	# --- Dash starten ---
-	if Input.is_action_just_pressed("dash") and dash_cooldown_timer <= 0 and not dashing:
+	if Input.is_action_just_pressed("dash") and can_dash and not dashing:
 		start_dash()
-
 
 func start_attack():
 	attacking = true
@@ -90,7 +88,6 @@ func start_attack():
 
 	# --- Richtung bestimmen ---
 	var attack_dir := Vector2.ZERO
-
 	if Input.is_action_pressed("ui_up"):
 		attack_dir = Vector2.UP
 	elif Input.is_action_pressed("ui_down"):
@@ -114,34 +111,31 @@ func stop_attack():
 	$AttackHitbox2D/ColorRect.visible = false
 
 
-func _on_AttackHitbox2D_body_entered(body: Node) -> void:
-	print("Getroffen: ", body.name)
-
-
-func _draw():
-	if attacking:
-		draw_circle($AttackHitbox2D.position, 20, Color.RED)
-
-
 func show_attack_sprite(attack_dir: Vector2):
 	var distance := 30
 	attack_sprite.visible = true
 
 	if attack_dir == Vector2.UP:
-		attack_sprite.flip_h = false
 		attack_sprite.position = Vector2(0, -distance)
-	elif attack_dir == Vector2.DOWN:
+		attack_sprite.rotation_degrees = -90
 		attack_sprite.flip_h = false
+
+	elif attack_dir == Vector2.DOWN:
 		attack_sprite.position = Vector2(0, distance)
+		attack_sprite.rotation_degrees = 90
+		attack_sprite.flip_h = false
+
 	else:
 		if attack_dir == Vector2.RIGHT:
 			facing_right = true
 			attack_sprite.flip_h = false
 			attack_sprite.position = Vector2(distance, 0)
+			attack_sprite.rotation_degrees = 0
 		else:
 			facing_right = false
 			attack_sprite.flip_h = true
 			attack_sprite.position = Vector2(-distance, 0)
+			attack_sprite.rotation_degrees = 0
 
 	await get_tree().create_timer(attack_duration).timeout
 	attack_sprite.visible = false
@@ -149,6 +143,7 @@ func show_attack_sprite(attack_dir: Vector2):
 
 func start_dash():
 	dashing = true
+	can_dash = false  # Dash nur einmal bis Bodenkontakt
 	dash_timer = dash_time
 
 	if Input.is_action_pressed("ui_up"):
@@ -162,4 +157,37 @@ func start_dash():
 	else:
 		dash_direction = Vector2.RIGHT if facing_right else Vector2.LEFT
 
+	show_dash_sprite()
 	print("Dash gestartet in Richtung:", dash_direction)
+
+
+func show_dash_sprite():
+	dash_sprite.visible = true
+	dash_sprite.position = Vector2.ZERO
+	dash_sprite.flip_v = false
+	dash_sprite.rotation_degrees = 0
+
+	# --- Grundrotation & Spiegelung ---
+	if dash_direction == Vector2.UP:
+		dash_sprite.rotation_degrees = 90
+	elif dash_direction == Vector2.DOWN:
+		dash_sprite.rotation_degrees = -90
+	elif dash_direction == Vector2.LEFT:
+		dash_sprite.flip_h = true
+	elif dash_direction == Vector2.RIGHT:
+		dash_sprite.flip_h = false
+
+	# --- Wenn man nach links schaut, invertiere Vertikalrotation ---
+	if not facing_right:
+		if dash_direction == Vector2.UP or dash_direction == Vector2.DOWN:
+			dash_sprite.rotation_degrees *= -1
+
+	await get_tree().create_timer(dash_time).timeout
+	dash_sprite.visible = false
+
+func _on_AttackHitbox2D_body_entered(body: Node) -> void:
+	print("Getroffen: ", body.name)
+
+func _draw():
+	if attacking:
+		draw_circle($AttackHitbox2D.position, 20, Color.RED)
