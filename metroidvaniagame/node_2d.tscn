@@ -48,6 +48,8 @@ texture = ExtResource("3_0hol4")
 [node name="DashSprite" type="Sprite2D" parent="Player"]
 texture = ExtResource("4_q6r6c")
 
+[node name="Camera2D" type="Camera2D" parent="Player"]
+
 [node name="Ground" type="StaticBody2D" parent="."]
 position = Vector2(224.52783, 548.73444)
 
